@@ -1,0 +1,648 @@
+int tailleCarre = 40;
+int xTemp = 4;
+int yTemp = 0;
+boolean debut = true;
+boolean running = false;
+boolean lose = false;
+boolean[][] tableau = new boolean[23][16];
+int tailleMaxDeTableau = 4;
+int type = int(random(7));
+int previewType = int(random(7));
+int frame = 0;
+int temps = 0;
+int moduloFramerate = 10;
+int score = 0;
+
+//gerer les couleurs
+int[][] tableauCouleur = new int[23][16];
+color couleur0 = #171D1C;
+color couleur1 = #173132;
+color couleur2 = #174547;
+color couleur3 = #176C71;
+color couleur4 = #17939B;
+color couleur5 = #26B8C2;
+color couleur6 = #35DDE9;
+
+
+//tableau de forme
+boolean[][] tableauO = new boolean[tailleMaxDeTableau][tailleMaxDeTableau];
+boolean[][] tableauI = new boolean[tailleMaxDeTableau][tailleMaxDeTableau];
+boolean[][] tableauS = new boolean[tailleMaxDeTableau][tailleMaxDeTableau];
+boolean[][] tableauZ = new boolean[tailleMaxDeTableau][tailleMaxDeTableau];
+boolean[][] tableauL = new boolean[tailleMaxDeTableau][tailleMaxDeTableau];
+boolean[][] tableauJ = new boolean[tailleMaxDeTableau][tailleMaxDeTableau];
+boolean[][] tableauT = new boolean[tailleMaxDeTableau][tailleMaxDeTableau];
+
+//test carré au milieu
+void test () {
+  //tableau[5][4] = true;
+  //** check tableau de formes **
+  //printTableau(tableauO, tailleMaxDeTableau, tailleMaxDeTableau);
+  //printTableau(tableauI, tailleMaxDeTableau, tailleMaxDeTableau);
+  //printTableau(tableauS, tailleMaxDeTableau, tailleMaxDeTableau);
+  //printTableau(tableauZ, tailleMaxDeTableau, tailleMaxDeTableau);
+  //printTableau(tableauL, tailleMaxDeTableau, tailleMaxDeTableau);
+  //printTableau(tableauJ, tailleMaxDeTableau, tailleMaxDeTableau);
+  //printTableau(tableauT, tailleMaxDeTableau, tailleMaxDeTableau);
+  //** check rotation de matrice **
+  //printTableau(tableauZ, 4, 4);
+  //printTableau(tournerVersLaGauche(tableauZ), 4, 4);
+}
+
+void setup() {
+  size(400, 1000);
+  frameRate(30);
+  initTableauFormes();
+  initTableau();
+  //test();
+}
+
+void draw() {
+  if(debut){
+    drawDebut();
+  }  else if (running){
+    background(#cce2e8);
+    stroke(255);
+    int i = timer();
+    if (i%moduloFramerate==0) {
+      typePiece(yTemp, xTemp, tableau, type, false);
+      typePieceCouleur(yTemp, xTemp, tableauCouleur, type, true);
+      if (PeutAllerVersType(xTemp, yTemp, 1, type)) {
+        yTemp = yTemp+1;
+        typePiece(yTemp, xTemp, tableau, type, true);
+        typePieceCouleur(yTemp, xTemp, tableauCouleur, type, false);
+      }  else if (yTemp == 0 && PeutAllerVersType(xTemp, yTemp, 1, type) == false) {
+        running = false;
+        lose = true;
+      } else {
+        typePiece(yTemp, xTemp, tableau, type, true);
+        typePieceCouleur(yTemp, xTemp, tableauCouleur, type, false);
+        yTemp = 0;
+        xTemp = 5;
+        type = previewType;
+        previewType = int(random(7));
+        //type = 0;
+        score = score + pointTableauInt(LigneRemplies(tableau));
+        detruireLesLignes((LigneRemplies(tableau)), tableau, tableauCouleur);
+        
+      }
+    }
+    printTableau(tableau, 23, 16);
+    printTableauInt(tableauCouleur, 23, 16);
+    TableauDraw(tableauCouleur);
+    enteteDraw();
+  }
+  else if (lose){
+    drawLose();
+  }
+}
+
+void keyPressed() {
+  if (key == CODED) {
+     if (keyCode == LEFT) {
+      typePiece(yTemp, xTemp, tableau, type, false);
+      typePieceCouleur(yTemp, xTemp, tableauCouleur, type, true);
+      if (PeutAllerVersType(xTemp, yTemp, 0, type)) {
+        xTemp = xTemp -1;
+      }
+      typePiece(yTemp, xTemp, tableau, type, true);
+      typePieceCouleur(yTemp, xTemp, tableauCouleur, type, false);
+    } else if (keyCode == RIGHT) {
+      typePiece(yTemp, xTemp, tableau, type, false);
+      typePieceCouleur(yTemp, xTemp, tableauCouleur, type, true);
+      if (PeutAllerVersType(xTemp, yTemp, 2, type)) {
+        xTemp = xTemp +1;
+      }
+      typePiece(yTemp, xTemp, tableau, type, true);
+      typePieceCouleur(yTemp, xTemp, tableauCouleur, type, false);
+    } else if (keyCode == DOWN) {
+      moduloFramerate = 3;
+    }
+  }
+  else if(key == 'Y'|| key == 'y'){
+    debut = false;
+    running = true;
+  }
+  else if(key == 'N' || key == 'n'){
+    exit();
+  }
+  if (key == 'q' || key == 'Q') {
+    typePiece(yTemp, xTemp, tableau, type, false);
+    typePieceCouleur(yTemp, xTemp, tableauCouleur, type, true);
+    if (xTemp < 3) {
+      xTemp =3;
+    } else if (xTemp > 9) {
+      xTemp = 9;
+    }
+    TournerVersLaDroiteType(type);
+  } else if (key == 'w' || key == 'W') {
+    typePiece(yTemp, xTemp, tableau, type, false);
+    typePieceCouleur(yTemp, xTemp, tableauCouleur, type, true);
+    if (xTemp < 3) {
+      xTemp =3;
+    } else if (xTemp > 9) {
+      xTemp = 9;
+    }
+    TournerVersLaGaucheType(type);
+  }
+}
+
+void keyReleased() {
+  if (key == CODED) {
+    if (keyCode == DOWN) {
+      moduloFramerate = 10;
+    }
+  }
+}
+
+int timer() {
+  if (frame < 30) {
+    frame++;
+  } else {
+    frame = 0;
+    temps++;
+  }
+  return frame;
+}
+
+// mise en place tableau avec les bordures de 3 qui depassent partout
+void initTableau() {
+  for (int i = 0; i < 23; i = i+1) {
+    for (int j = 0; j < 16; j = j+1) {
+      if ((j>=0 && j<=2) || (j>=13 && j<=15)) {
+        tableau[i][j] = true;
+      } else if (i<=23 && i >= 20) {
+        tableau[i][j] = true;
+      }
+    }
+  }
+}
+
+void TableauDraw(int[][] tableau) {
+  for (int i = 0; i < 20; i = i+1) {
+    for (int j = 3; j < 13; j = j+1) {
+      if (tableau[i][j] != 0) {
+        switch(tableau[i][j]) {
+        case 1:
+          fill(couleur0);
+          rect(j*tailleCarre-120, i*tailleCarre+200, tailleCarre, tailleCarre);
+          break;
+        case 2:
+          fill(couleur1);
+          rect(j*tailleCarre-120, i*tailleCarre+200, tailleCarre, tailleCarre);
+          break;
+        case 3:
+          fill(couleur2);
+          rect(j*tailleCarre-120, i*tailleCarre+200, tailleCarre, tailleCarre);
+          break;
+        case 4:
+          fill(couleur3);
+          rect(j*tailleCarre-120, i*tailleCarre+200, tailleCarre, tailleCarre);
+          break;
+        case 5:
+          fill(couleur4);
+          rect(j*tailleCarre-120, i*tailleCarre+200, tailleCarre, tailleCarre);
+          break;
+        case 6:
+          fill(couleur5);
+          rect(j*tailleCarre-120, i*tailleCarre+200, tailleCarre, tailleCarre);
+          break;
+        case 7:
+          fill(couleur6);
+          rect(j*tailleCarre-120, i*tailleCarre+200, tailleCarre, tailleCarre);
+          break;
+        }
+      }
+    }
+  }
+}
+
+void enteteDraw() {
+  fill(#FFFFFF);
+  rect(0, 0, 400, 200);
+  fill(#000000);
+  textSize(50);
+  text("Score :", 20, 50);
+  text(score, 165, 50);
+  text("Temps :", 20, 100);
+  text(temps, 190, 100);
+  rect(250, 0, 150, 200);
+  stroke(#000000);
+  drawPieceType(280, 50, previewType, 25);
+}
+
+void drawLose() {
+  background(#cce2e8);
+  stroke(#cce2e8);
+  fill(#FFFFFF);
+  rect(50, 400, 300, 160);
+  fill(#000000);
+  text("YOU LOSE", 80, 470);
+  text("Score :", 80, 520);
+  text(score, 230, 520);
+}
+
+void drawDebut() {
+  background(#cce2e8);
+  stroke(#cce2e8);
+  fill(#FFFFFF);
+  textSize(30);
+  rect(50, 400, 300, 160);
+  fill(#000000);
+  text("Démarrer ? (Y/N)", 100, 440);
+  textSize(20);
+  text("Contrôle :", 75, 470);
+  text("Q/W - Rotation", 75, 495);
+  text("LEFT/RIGHT - Déplacement", 75, 520);
+  text("DOWN - Vitesse++", 75, 545);
+}
+
+void drawPiece(int x, int y, boolean tableau[][], int taille) {
+  for (int i = 0; i < 4; i = i+1) {
+    for (int j = 0; j < 4; j = j+1) {
+      if (tableau[i][j] == true) {
+        fill(#FFFFFF);
+        rect(j*taille+x, i*taille+y, taille, taille);
+      }
+    }
+  }
+}
+
+void drawPieceType(int x, int y, int type, int taille) {
+  switch(type) {
+  case 0:
+    drawPiece(x, y, tableauO, taille);
+    break;
+  case 1:
+    drawPiece(x, y, tableauI, taille);
+    break;
+  case 2:
+    drawPiece(x, y, tableauS, taille);
+    break;
+  case 3:
+    drawPiece(x, y, tableauZ, taille);
+    break;
+  case 4:
+    drawPiece(x, y, tableauL, taille);
+    break;
+  case 5:
+    drawPiece(x, y, tableauJ, taille);
+    break;
+  case 6:
+    drawPiece(x, y, tableauT, taille);
+    break;
+  }
+}
+
+int pointTableauInt(int tableau[]) {
+  int resultat = 0;
+  int score = 0;
+  for (int i = 0; i < 4; i = i+1) {
+    if (tableau[i]!=-1) {
+
+      resultat = resultat+1;
+    }
+  }
+  println("resultat :", resultat);
+  switch(resultat) {
+  case 0:
+    score = 0;
+    break;
+  case 1:
+    score = 40;
+    break;
+  case 2:
+    score = 100;
+    break;
+  case 3:
+    score = 300;
+    break;
+  case 4:
+    score = 1200;
+    break;
+  }
+  println("score :", score);
+  return score;
+}
+
+void printTableau(boolean[][] tableau, int x, int y) {
+  for (int i = 0; i < x; i = i+1) {
+    for (int j = 0; j < y; j = j+1) {
+      print("|", tableau[i][j]);
+    }
+    println("");
+  }
+  println("");
+}
+
+void printTableauInt(int[][] tableau, int x, int y) {
+  for (int i = 0; i < x; i = i+1) {
+    for (int j = 0; j < y; j = j+1) {
+      print("|", tableau[i][j]);
+    }
+    println("");
+  }
+  println("");
+}
+
+//tourne une matrice de 4x4 sur la droite
+boolean[][] tournerVersLaDroite(boolean[][] forme) {
+  boolean[][] temp = new boolean[4][4];
+  //symetrie centrale
+  for (int i = 0; i < 4; i = i+1) {
+    for (int j = 0; j < 4; j = j+1) {
+      temp[j][i] = forme[i][j];
+    }
+  }
+  //echange colonne
+  for (int k = 0; k < 4; k++) {
+    for (int l = 0; l < 4; l++) {
+      forme[k][3-l] = temp[k][l];
+    }
+  }
+  return forme;
+}
+
+//tourne une matrice de 4x4 sur la gauche
+boolean[][] tournerVersLaGauche(boolean[][] forme) {
+  boolean[][] temp = new boolean[4][4];
+  //symetrie centrale
+  for (int i = 0; i < 4; i = i+1) {
+    for (int j = 0; j < 4; j = j+1) {
+      temp[j][i] = forme[i][j];
+    }
+  }
+  //echange colonne
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      forme[3-i][j] = temp[i][j];
+    }
+  }
+  return forme;
+}
+
+boolean[][] TournerVersLaDroiteType(int type) {
+  boolean[][] temp = {};
+  switch(type) {
+  case 0:
+    return tournerVersLaDroite(tableauO);
+  case 1:
+    return tournerVersLaDroite(tableauI);
+  case 2:
+    return tournerVersLaDroite(tableauS);
+  case 3:
+    return tournerVersLaDroite(tableauZ);
+  case 4:
+    return tournerVersLaDroite(tableauL);
+  case 5:
+    return tournerVersLaDroite(tableauJ);
+  case 6:
+    return tournerVersLaDroite(tableauT);
+  }
+  return temp;
+}
+
+boolean[][] TournerVersLaGaucheType(int type) {
+  boolean[][] temp = {};
+  switch(type) {
+  case 0:
+    return tournerVersLaGauche(tableauO);
+  case 1:
+    return tournerVersLaGauche(tableauI);
+  case 2:
+    return tournerVersLaGauche(tableauS);
+  case 3:
+    return tournerVersLaGauche(tableauZ);
+  case 4:
+    return tournerVersLaGauche(tableauL);
+  case 5:
+    return tournerVersLaGauche(tableauJ);
+  case 6:
+    return tournerVersLaGauche(tableauT);
+  }
+  return temp;
+}
+
+// détruit les lignes données en int[] et décale le le reste du tableau vers le bas
+void detruireLesLignes(int lignes [], boolean tableau[][], int tableauCouleur[][]) {
+  for (int i = 0; i < 4; i = i+1) {
+    if (lignes[i]!=-1) {
+      for (int j = 3; j < 13; j = j+1) {
+        tableau[lignes[i]] [j] = false;
+        tableauCouleur[lignes[i]] [j] = 0;
+      }
+      for (int k = lignes[i]; k > 0; k = k-1) {
+        for (int l = 3; l < 13; l = l+1) {
+          tableau[k][l]=tableau[k-1][l];
+          tableauCouleur[k][l]=tableauCouleur[k-1][l];
+        }
+      }
+    }
+  }
+}
+
+// renvoie les lignes remplies d'un tableau donné
+int[] LigneRemplies(boolean tableau[][]) {
+  int sommeLigne = 0;
+  int [] lignes = {-1, -1, -1, -1};
+  for (int i = 0; i < 20; i = i+1) {
+    for (int j = 3; j < 13; j = j+1) {
+      if (tableau[i][j] == true) {
+        sommeLigne = sommeLigne + 1;
+      }
+      if (sommeLigne == 10) {
+        if (lignes[0]==-1) {
+          lignes[0]=i;
+        } else if (lignes[1]==-1) {
+          lignes[1]=i;
+        } else if (lignes[2]==-1) {
+          lignes[2]=i;
+        } else if (lignes[3]==-1) {
+          lignes[3]=i;
+        }
+      }
+    }
+    sommeLigne = 0;
+  }
+  return lignes;
+}
+
+void PieceCouleur(int x, int y, int tableauCouleur[][], int couleur, boolean[][] tableauPiece, boolean pasCouleur) {
+  for (int i = 0; i < 4; i = i+1) {
+    for (int j = 0; j < 4; j = j+1) {
+      if (tableauPiece[i][j] == true) {
+        if (pasCouleur) {
+          tableauCouleur[x+i][y+j]=0;
+        } else {
+          tableauCouleur[x+i][y+j]=couleur;
+        }
+      }
+    }
+  }
+}
+
+void typePieceCouleur(int x, int y, int tableauCouleur[][], int type, boolean pasCouleur) {
+  switch(type) {
+  case 0:
+    PieceCouleur(x, y, tableauCouleur, 1, tableauO, pasCouleur);
+    break;
+  case 1:
+    PieceCouleur(x, y, tableauCouleur, 2, tableauI, pasCouleur);
+    break;
+  case 2:
+    PieceCouleur(x, y, tableauCouleur, 3, tableauS, pasCouleur);
+    break;
+  case 3:
+    PieceCouleur(x, y, tableauCouleur, 4, tableauZ, pasCouleur);
+    break;
+  case 4:
+    PieceCouleur(x, y, tableauCouleur, 5, tableauL, pasCouleur);
+    break;
+  case 5:
+    PieceCouleur(x, y, tableauCouleur, 6, tableauJ, pasCouleur);
+    break;
+  case 6:
+    PieceCouleur(x, y, tableauCouleur, 7, tableauT, pasCouleur);
+    break;
+  }
+}
+
+void Piece(int x, int y, boolean tableau[][], boolean booleen, boolean[][] tableauPiece) {
+  for (int i = 0; i < 4; i = i+1) {
+    for (int j = 0; j < 4; j = j+1) {
+      if (tableauPiece[i][j] == true) {
+        tableau[x+i][y+j]=booleen;
+      }
+    }
+  }
+}
+
+// ecris dans un tableau donné une forme donné aux coordonnées données
+void typePiece(int x, int y, boolean tableau[][], int type, boolean booleen) {
+  switch(type) {
+  case 0:
+    Piece(x, y, tableau, booleen, tableauO);
+    break;
+  case 1:
+    Piece(x, y, tableau, booleen, tableauI);
+    break;
+  case 2:
+    Piece(x, y, tableau, booleen, tableauS);
+    break;
+  case 3:
+    Piece(x, y, tableau, booleen, tableauZ);
+    break;
+  case 4:
+    Piece(x, y, tableau, booleen, tableauL);
+    break;
+  case 5:
+    Piece(x, y, tableau, booleen, tableauJ);
+    break;
+  case 6:
+    Piece(x, y, tableau, booleen, tableauT);
+    break;
+  }
+}
+
+
+// ecris une forme dans un tableau donné
+void O(int x, int y, boolean tableau[][], boolean booleen) {
+  tableau[x+1][y+1] = booleen;
+  tableau[x+2][y+2] = booleen;
+  tableau[x+2][y+1] = booleen;
+  tableau[x+1][y+2] = booleen;
+}
+
+void I(int x, int y, boolean tableau[][], boolean booleen) {
+  tableau[x+1][y] = booleen;
+  tableau[x+1][y+1] = booleen;
+  tableau[x+1][y+2] = booleen;
+  tableau[x+1][y+3] = booleen;
+}
+
+void S(int x, int y, boolean tableau[][], boolean booleen) {
+  tableau[x+1][y+1] = booleen;
+  tableau[x+2][y+1] = booleen;
+  tableau[x+1][y+2] = booleen;
+  tableau[x][y+2] = booleen;
+}
+
+void Z(int x, int y, boolean tableau[][], boolean booleen) {
+  tableau[x][y+1] = booleen;
+  tableau[x+1][y+1] = booleen;
+  tableau[x+1][y+2] = booleen;
+  tableau[x+2][y+2] = booleen;
+}
+
+void L(int x, int y, boolean tableau[][], boolean booleen) {
+  tableau[x+1][y] = booleen;
+  tableau[x+1][y+1] = booleen;
+  tableau[x+1][y+2] = booleen;
+  tableau[x+2][y+2] = booleen;
+}
+
+void J(int x, int y, boolean tableau[][], boolean booleen) {
+  tableau[x+2][y] = booleen;
+  tableau[x+2][y+1] = booleen;
+  tableau[x+2][y+2] = booleen;
+  tableau[x+1][y+2] = booleen;
+}
+
+void T(int x, int y, boolean tableau[][], boolean booleen) {
+  tableau[x][y+1] = booleen;
+  tableau[x+1][y+1] = booleen;
+  tableau[x+2][y+1] = booleen;
+  tableau[x+1][y+2] = booleen;
+}
+
+//crée forme pour chaque tableau de forme(4x4)
+void initTableauFormes() {
+  O(0, 0, tableauO, true);
+  I(0, 0, tableauI, true);
+  S(0, 0, tableauS, true);
+  Z(0, 0, tableauZ, true);
+  L(0, 0, tableauL, true);
+  J(0, 0, tableauJ, true);
+  T(0, 0, tableauT, true);
+}
+
+//direction 0, 1, 2 Gauche, Bas, Droite
+boolean PeutAllerVers(int x, int y, boolean[][] tableauDeForme, int direction) {
+  boolean resultat = true;
+  for (int i = 0; i < tailleMaxDeTableau; i = i+1) {
+    for (int j = 0; j < tailleMaxDeTableau; j = j+1) {
+      if (tableauDeForme[j][i] == true && tableau[y+j][x+i-1] == true && direction == 0) {
+        println("damn un mur, x:", x+", y:", y+", i:", i+", j:", j);
+        resultat = false;
+      } else if (tableauDeForme[j][i] == true && tableau[y+j+1][x+i] == true && direction == 1) {
+        println("damn un mur, x:", x+", y:", y+", i:", i+", j:", j);
+        resultat = false;
+      } else if (tableauDeForme[j][i] == true && tableau[y+j][x+i+1] == true && direction == 2) {
+        println("damn un mur, x:", x+", y:", y+", i:", i+", j:", j);
+        resultat = false;
+      }
+    }
+  }
+  return resultat;
+}
+
+boolean PeutAllerVersType(int x, int y, int direction, int type) {
+  boolean resultat = false;
+  switch(type) {
+  case 0:
+    return PeutAllerVers(x, y, tableauO, direction);
+  case 1:
+    return PeutAllerVers(x, y, tableauI, direction);
+  case 2:
+    return PeutAllerVers(x, y, tableauS, direction);
+  case 3:
+    return PeutAllerVers(x, y, tableauZ, direction);
+  case 4:
+    return PeutAllerVers(x, y, tableauL, direction);
+  case 5:
+    return PeutAllerVers(x, y, tableauJ, direction);
+  case 6:
+    return PeutAllerVers(x, y, tableauT, direction);
+  }
+  return resultat;
+}
